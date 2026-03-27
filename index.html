@@ -3,240 +3,358 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy Continuum Simulator v2.0</title>
+    <title>Metabolic Engine Simulator v3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .animate-pulse-fast { animation: pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .log-enter { animation: slideIn 0.3s ease-out forwards; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-        /* Custom scrollbar for the log */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #60a5fa; }
+        .tab-inactive { color: #94a3b8; }
+        .tab-inactive:hover { color: #cbd5e1; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-6 selection:bg-blue-500">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen selection:bg-blue-500">
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Top Navigation -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="activity" class="text-blue-500 w-8 h-8"></i>
+                    <span class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+                        Metabolic Engine v3.0
+                    </span>
+                </div>
+                <div class="flex space-x-8">
+                    <button onclick="switchTab('simulator')" id="btn-tab-simulator" class="tab-active inline-flex items-center px-1 pt-1 text-sm font-bold uppercase tracking-wider transition-colors">
+                        <i data-lucide="play-circle" class="w-4 h-4 mr-2"></i> Simulator
+                    </button>
+                    <button onclick="switchTab('knowledge')" id="btn-tab-knowledge" class="tab-inactive inline-flex items-center px-1 pt-1 text-sm font-bold uppercase tracking-wider transition-colors">
+                        <i data-lucide="book-open" class="w-4 h-4 mr-2"></i> Knowledge Base
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
         
-        <!-- Header & Selectors -->
-        <header class="flex flex-col lg:flex-row justify-between items-center bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
-            <div class="mb-4 lg:mb-0">
-                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-teal-400 to-emerald-400 flex items-center gap-3">
-                    <i data-lucide="activity" class="text-blue-400 w-8 h-8"></i>
-                    Metabolic Engine Simulator
-                </h1>
-                <p class="text-slate-400 mt-1 font-semibold text-sm">A-Level PE & BTEC Sport Physiology Lab</p>
-            </div>
+        <!-- ========================================== -->
+        <!-- TAB 1: SIMULATOR & LEADERBOARD             -->
+        <!-- ========================================== -->
+        <div id="tab-simulator" class="space-y-6">
             
-            <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                <div class="flex-1">
-                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Select Athlete</label>
-                    <select id="athlete-selector" class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="UNTRAINED">Untrained Athlete (Average)</option>
-                        <option value="BOLT">Usain Bolt (Elite 100m/200m)</option>
-                        <option value="RUDISHA" selected>David Rudisha (Elite 800m)</option>
-                        <option value="FARAH">Mo Farah (Elite 5000m/10k)</option>
-                    </select>
-                </div>
-                <div class="flex-1">
-                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Select Event</label>
-                    <select id="event-selector" class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-lg font-bold focus:ring-2 focus:ring-emerald-500 outline-none">
-                        <option value="SPRINT_100">100m Sprint</option>
-                        <option value="SPRINT_400" selected>400m Sprint</option>
-                        <option value="RUN_1500">1500m Endurance</option>
-                    </select>
-                </div>
-            </div>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            <!-- LEFT COLUMN: The Track & Timer -->
-            <div class="lg:col-span-4 flex flex-col gap-6">
-                <!-- Huge Data Display -->
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl text-center relative overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none"></div>
-                    <h2 id="event-name" class="text-xl font-bold text-slate-300 mb-2">400m Sprint</h2>
-                    
-                    <div class="flex justify-center items-baseline gap-2 mb-2">
-                        <span id="time-display" class="text-7xl font-black font-mono text-white tracking-tighter">0.0</span>
-                        <span class="text-2xl text-slate-400 font-bold">s</span>
+            <!-- Setup & Config -->
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">1. Select Athlete</label>
+                        <select id="athlete-selector" class="w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            <option value="BOLT">Usain Bolt (Sprinter)</option>
+                            <option value="RUDISHA" selected>David Rudisha (Mid-Distance)</option>
+                            <option value="FARAH">Mo Farah (Endurance)</option>
+                        </select>
                     </div>
-                    
-                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex justify-between items-center mt-4">
-                        <div class="text-left">
-                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Distance</p>
-                            <p class="text-2xl font-mono font-bold text-emerald-400"><span id="distance-display">0</span><span class="text-sm text-slate-500"> / <span id="total-distance">400</span>m</span></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Current Speed</p>
-                            <p id="speed-display" class="text-2xl font-mono font-bold text-blue-400">0.0 <span class="text-sm text-slate-500">m/s</span></p>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">2. Select Event</label>
+                        <select id="event-selector" class="w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-lg font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                            <option value="SPRINT_100">100m Sprint</option>
+                            <option value="SPRINT_400" selected>400m Sprint</option>
+                            <option value="RUN_1500">1500m Endurance</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-slate-400 font-bold mb-2 flex justify-between">
+                            <span>3. Race Plan (Target Effort)</span>
+                            <span id="effort-display" class="text-blue-400">90%</span>
+                        </label>
+                        <div class="flex items-center gap-4 bg-slate-950 border border-slate-700 p-3 rounded-lg">
+                            <input type="range" id="effort-slider" min="50" max="100" value="90" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
                         </div>
                     </div>
                 </div>
+                
+                <!-- Action Bar -->
+                <div class="mt-6 flex justify-between items-center pt-6 border-t border-slate-800">
+                    <p class="text-sm text-slate-500 italic max-w-xl hidden md:block">
+                        <i data-lucide="info" class="w-4 h-4 inline mb-1 mr-1"></i>
+                        Find the optimal pacing strategy. Running 100% effort in a 400m will cause severe OBLA (Lactic Acid), forcing the athlete to dramatically slow down before the finish.
+                    </p>
+                    <button id="start-btn" onclick="startRace()" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-black text-lg flex items-center justify-center gap-2 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50">
+                        <i data-lucide="flag"></i> Start Simulation
+                    </button>
+                </div>
+            </div>
 
-                <!-- Circular Track -->
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex-1 flex flex-col justify-center items-center">
-                    <div class="relative w-[260px] h-[260px] border-[20px] border-[#c2523b] rounded-full bg-slate-950 flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
-                        <!-- Lines -->
-                        <div class="absolute inset-0 rounded-full border border-white/20"></div>
-                        <div class="absolute inset-2 rounded-full border border-dashed border-white/40"></div>
-                        <div class="absolute inset-4 rounded-full border border-white/20"></div>
+            <!-- Race View (Grid) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left: Track & Data -->
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center justify-center relative overflow-hidden flex-1">
                         
-                        <!-- Finish Line -->
-                        <div class="absolute top-[-20px] left-1/2 w-2 h-[20px] bg-[repeating-linear-gradient(45deg,white,white_4px,black_4px,black_8px)] -ml-[4px] z-0"></div>
+                        <div class="absolute top-4 left-4 right-4 flex justify-between z-10">
+                            <span id="display-event-name" class="font-bold text-slate-300 tracking-wider">400m Sprint</span>
+                            <span id="display-athlete-name" class="font-bold text-blue-400">David Rudisha</span>
+                        </div>
 
-                        <!-- Runner -->
-                        <div id="runner-wrapper" class="absolute left-1/2 top-1/2 w-8 h-8 -ml-4 -mt-4 flex items-center justify-center z-20 transition-all duration-100 ease-linear">
-                            <div id="runner-flip" class="transform scale-x-[-1]">
-                                <div id="runner-icon" class="text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] transition-transform">🏃‍♂️</div>
+                        <!-- Timer -->
+                        <div class="text-center mt-8 mb-6 z-10">
+                            <div class="flex items-baseline justify-center gap-1">
+                                <span id="time-display" class="text-7xl font-black font-mono text-white tracking-tighter">0.0</span>
+                                <span class="text-xl text-slate-500 font-bold">s</span>
                             </div>
                         </div>
 
-                        <!-- Center Speedo -->
-                        <div class="text-center z-10 flex flex-col items-center">
-                            <p class="text-slate-500 text-[10px] uppercase font-bold">Effort level</p>
-                            <p id="center-effort" class="text-3xl font-black text-white">0%</p>
-                        </div>
-                    </div>
+                        <!-- Circular Track -->
+                        <div class="relative w-[240px] h-[240px] border-[16px] border-[#c2523b] rounded-full bg-slate-950 flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-10">
+                            <div class="absolute inset-0 rounded-full border border-white/10 pointer-events-none"></div>
+                            <div class="absolute inset-2 rounded-full border border-dashed border-white/20 pointer-events-none"></div>
+                            
+                            <!-- Finish Line -->
+                            <div class="absolute top-[-16px] left-1/2 w-1.5 h-[16px] bg-[repeating-linear-gradient(45deg,white,white_4px,black_4px,black_8px)] -ml-[3px] z-0"></div>
 
-                    <!-- Pacing Strategy Controls -->
-                    <div class="w-full mt-8">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-slate-300 flex items-center gap-2"><i data-lucide="crosshair" class="w-4 h-4 text-blue-400"></i> Race Tactics (Effort)</h3>
-                            <button id="play-btn" onclick="toggleRun()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors">
-                                <i data-lucide="play" id="play-icon" class="w-4 h-4"></i> <span id="play-text">Start Race</span>
-                            </button>
+                            <!-- Runner -->
+                            <div id="runner-wrapper" class="absolute left-1/2 top-1/2 w-8 h-8 -ml-4 -mt-4 flex items-center justify-center z-20 transition-all duration-100 ease-linear">
+                                <div id="runner-flip" class="transform scale-x-[-1]">
+                                    <div id="runner-icon" class="text-3xl drop-shadow-lg transition-transform">🏃‍♂️</div>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Distance</p>
+                                <p class="text-2xl font-black text-white font-mono"><span id="dist-display">0</span>m</p>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-4 gap-2">
-                            <button onclick="setEffort(1.0)" id="btn-100" class="effort-btn bg-slate-800 border border-slate-700 hover:bg-slate-700 p-2 rounded-lg text-sm font-bold flex flex-col items-center transition-all">
-                                <span class="text-red-400">100%</span><span class="text-[10px] text-slate-400">All Out</span>
-                            </button>
-                            <button onclick="setEffort(0.9)" id="btn-90" class="effort-btn bg-slate-800 border border-slate-700 hover:bg-slate-700 p-2 rounded-lg text-sm font-bold flex flex-col items-center transition-all">
-                                <span class="text-orange-400">90%</span><span class="text-[10px] text-slate-400">Aggressive</span>
-                            </button>
-                            <button onclick="setEffort(0.75)" id="btn-75" class="effort-btn bg-slate-800 border border-slate-700 hover:bg-slate-700 p-2 rounded-lg text-sm font-bold flex flex-col items-center transition-all">
-                                <span class="text-yellow-400">75%</span><span class="text-[10px] text-slate-400">Paced</span>
-                            </button>
-                            <button onclick="setEffort(0.5)" id="btn-50" class="effort-btn bg-slate-800 border border-slate-700 hover:bg-slate-700 p-2 rounded-lg text-sm font-bold flex flex-col items-center transition-all">
-                                <span class="text-emerald-400">50%</span><span class="text-[10px] text-slate-400">Relaxed</span>
-                            </button>
+                        
+                        <div class="w-full mt-6 bg-slate-950 rounded-xl p-3 border border-slate-800 flex justify-between items-center z-10">
+                            <span class="text-xs uppercase tracking-widest font-bold text-slate-500">Current Speed</span>
+                            <span class="font-mono font-bold text-emerald-400 text-lg"><span id="speed-display">0.0</span> m/s</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- MIDDLE COLUMN: The Engine & Physiology -->
-            <div class="lg:col-span-4 flex flex-col gap-6">
-                
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex-1 flex flex-col">
-                    <h3 class="text-xl font-black mb-6 flex items-center gap-2 border-b border-slate-800 pb-4">
-                        <i data-lucide="microscope" class="text-teal-400 w-6 h-6"></i> The Metabolic Engine
+                <!-- Middle: Engine Physiology -->
+                <div class="lg:col-span-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col">
+                    <h3 class="text-lg font-black mb-6 flex items-center gap-2 border-b border-slate-800 pb-4 text-white">
+                        <i data-lucide="microscope" class="text-teal-400"></i> Live Physiology
                     </h3>
 
                     <div class="space-y-8 flex-1">
-                        
                         <!-- PCr Bar -->
-                        <div class="relative">
-                            <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <div class="flex justify-between items-end mb-1">
                                 <div>
-                                    <p class="font-bold text-orange-400 flex items-center gap-1"><i data-lucide="zap" class="w-4 h-4"></i> Phosphocreatine (PCr)</p>
-                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">ATP-PC System (Alactic)</p>
+                                    <p class="font-bold text-orange-400 flex items-center gap-1"><i data-lucide="zap" class="w-4 h-4"></i> PCr Stores</p>
+                                    <p class="text-[9px] text-slate-500 uppercase tracking-wider">ATP-PC / Alactic</p>
                                 </div>
-                                <span id="pcr-text" class="text-xl font-bold font-mono">100%</span>
+                                <span id="pcr-text" class="font-bold font-mono text-white">100%</span>
                             </div>
-                            <div class="h-6 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 shadow-inner">
-                                <div id="pcr-bar" class="h-full bg-gradient-to-r from-orange-600 to-orange-400 w-full transition-all duration-200"></div>
+                            <div class="h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner">
+                                <div id="pcr-bar" class="h-full bg-gradient-to-r from-orange-600 to-orange-400 w-full transition-all duration-100"></div>
                             </div>
                         </div>
 
                         <!-- Lactate Bar -->
                         <div class="relative">
-                            <div class="flex justify-between items-end mb-2">
+                            <div class="flex justify-between items-end mb-1">
                                 <div>
-                                    <p id="lactate-title" class="font-bold text-slate-300 flex items-center gap-1"><i data-lucide="flame" class="w-4 h-4"></i> Lactic Acid</p>
-                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Anaerobic Glycolysis</p>
+                                    <p class="font-bold text-red-400 flex items-center gap-1"><i data-lucide="flame" class="w-4 h-4"></i> Lactic Acid</p>
+                                    <p class="text-[9px] text-slate-500 uppercase tracking-wider">Anaerobic Glycolysis</p>
                                 </div>
-                                <span id="lactate-text" class="text-xl font-bold font-mono text-slate-300">0%</span>
+                                <span id="lactate-text" class="font-bold font-mono text-white">0%</span>
                             </div>
-                            <div class="h-6 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 shadow-inner relative">
-                                <!-- OBLA Threshold Marker -->
-                                <div id="obla-marker" class="absolute top-0 bottom-0 w-1 bg-yellow-400 z-10 shadow-[0_0_8px_rgba(250,204,21,1)]" style="left: 60%;" title="OBLA Threshold"></div>
-                                <div id="lactate-bar" class="h-full bg-gradient-to-r from-yellow-500 to-red-600 w-0 transition-all duration-200"></div>
+                            <div class="h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
+                                <div id="obla-marker" class="absolute top-0 bottom-0 w-1 bg-yellow-400 z-10" style="left: 85%;" title="OBLA Threshold"></div>
+                                <div id="lactate-bar" class="h-full bg-gradient-to-r from-yellow-500 to-red-600 w-0 transition-all duration-100"></div>
                             </div>
-                            <p class="text-[10px] text-slate-500 mt-1 flex justify-between">
-                                <span>Safe Zone</span>
-                                <span class="text-red-400 font-bold">OBLA (Fatigue)</span>
-                            </p>
+                            <div class="flex justify-between text-[9px] font-bold text-slate-500 mt-1 uppercase">
+                                <span>Safe</span>
+                                <span class="text-red-500">OBLA (Fatigue)</span>
+                            </div>
                         </div>
 
-                        <!-- Aerobic Engine -->
-                        <div class="relative bg-slate-950 p-4 rounded-xl border border-slate-800">
-                            <div class="flex justify-between items-center mb-2">
+                        <!-- Warnings -->
+                        <div id="warning-box" class="bg-slate-950 border border-slate-800 p-4 rounded-xl opacity-50 transition-all">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="alert-triangle" id="warning-icon" class="text-slate-600 mt-0.5"></i>
                                 <div>
-                                    <p class="font-bold text-emerald-400 flex items-center gap-1"><i data-lucide="wind" class="w-4 h-4"></i> Aerobic Capacity</p>
-                                    <p class="text-[10px] text-slate-500 uppercase tracking-wider">Oxygen Delivery / Lactate Clearance</p>
+                                    <p id="warning-title" class="font-bold text-slate-500 text-sm">Engine Status: Optimal</p>
+                                    <p id="warning-desc" class="text-xs text-slate-600 mt-1">Energy demand is currently matching supply.</p>
                                 </div>
-                                <span id="aerobic-text" class="text-emerald-400 font-bold bg-emerald-900/30 px-2 py-1 rounded text-sm">Rating: Elite</span>
                             </div>
-                            <p id="aerobic-desc" class="text-xs text-slate-400 leading-relaxed">High mitochondria density. Clears lactic acid rapidly and provides sustainable energy.</p>
                         </div>
-
                     </div>
                 </div>
-            </div>
 
-            <!-- RIGHT COLUMN: Live Exam Feed -->
-            <div class="lg:col-span-4 flex flex-col gap-6">
-                <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl flex-1 flex flex-col overflow-hidden">
-                    <div class="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
-                        <h3 class="font-black text-white flex items-center gap-2">
-                            <i data-lucide="clipboard-list" class="text-blue-400 w-5 h-5"></i> Live Coaches Log
-                        </h3>
-                        <span class="text-[10px] bg-blue-900/50 text-blue-300 px-2 py-1 rounded font-bold uppercase tracking-widest border border-blue-700">Exam Terminology</span>
-                    </div>
+                <!-- Right: Leaderboard -->
+                <div class="lg:col-span-3 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col">
+                    <h3 class="text-lg font-black mb-4 flex items-center gap-2 border-b border-slate-800 pb-4 text-white">
+                        <i data-lucide="trophy" class="text-yellow-400"></i> Leaderboard
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4 font-bold uppercase tracking-widest">Event: <span id="lb-event" class="text-blue-400">400m Sprint</span></p>
                     
-                    <div id="log-container" class="p-4 flex-1 overflow-y-auto custom-scroll space-y-3 bg-slate-950/50 max-h-[500px]">
-                        <!-- Logs injected here -->
-                        <div class="text-sm text-slate-500 italic text-center mt-10">Select an event, pacing strategy, and start the race to see live physiological feedback.</div>
+                    <div class="flex-1 overflow-y-auto custom-scroll pr-2 space-y-2" id="leaderboard-list">
+                        <!-- Populated by JS -->
+                        <div class="text-center text-slate-600 text-sm italic mt-10">Run a simulation to post a time.</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: KNOWLEDGE BASE                      -->
+        <!-- ========================================== -->
+        <div id="tab-knowledge" class="hidden space-y-6 animate-[fadeIn_0.3s_ease-out]">
+            <div class="bg-gradient-to-br from-slate-900 to-slate-950 p-8 rounded-2xl border border-slate-800 shadow-xl">
+                <div class="max-w-3xl mb-8">
+                    <h2 class="text-3xl font-black text-white mb-2">The Energy Continuum</h2>
+                    <p class="text-slate-400 text-lg">All movement requires energy (ATP). The human body utilizes three distinct biological engines to turn chemical fuel into physical motion, dependent entirely on <strong class="text-white">intensity</strong> and <strong class="text-white">duration</strong>.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- ATP-PC -->
+                    <div class="bg-slate-900 border border-orange-500/30 p-6 rounded-xl hover:border-orange-500 transition-colors group">
+                        <div class="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-orange-500/20">
+                            <i data-lucide="zap" class="text-orange-500"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-orange-400 mb-1">ATP-PC System</h3>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Alactic / Anaerobic</p>
+                        
+                        <div class="space-y-3 text-sm">
+                            <p><strong class="text-slate-300">Fuel:</strong> Phosphocreatine (PCr)</p>
+                            <p><strong class="text-slate-300">Duration:</strong> 0 - 10 seconds</p>
+                            <p><strong class="text-slate-300">Yield:</strong> 1 ATP per PCr (Low)</p>
+                            <p><strong class="text-slate-300">By-product:</strong> None</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800">
+                            <p class="text-emerald-400 font-bold text-xs mb-1">PROS</p>
+                            <p class="text-slate-400 text-xs mb-3">Instant energy. Extremely powerful. No fatiguing by-products.</p>
+                            <p class="text-red-400 font-bold text-xs mb-1">CONS</p>
+                            <p class="text-slate-400 text-xs">Depletes rapidly. Takes 2-3 minutes to fully recover (EPOC).</p>
+                        </div>
+                    </div>
+
+                    <!-- Lactate -->
+                    <div class="bg-slate-900 border border-red-500/30 p-6 rounded-xl hover:border-red-500 transition-colors group">
+                        <div class="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-red-500/20">
+                            <i data-lucide="flame" class="text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-red-400 mb-1">Anaerobic Glycolysis</h3>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Lactate System</p>
+                        
+                        <div class="space-y-3 text-sm">
+                            <p><strong class="text-slate-300">Fuel:</strong> Glycogen (Carbs)</p>
+                            <p><strong class="text-slate-300">Duration:</strong> 10s - 3 minutes</p>
+                            <p><strong class="text-slate-300">Yield:</strong> 2 ATP per Glucose</p>
+                            <p><strong class="text-slate-300">By-product:</strong> Lactic Acid (H+ ions)</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800">
+                            <p class="text-emerald-400 font-bold text-xs mb-1">PROS</p>
+                            <p class="text-slate-400 text-xs mb-3">Fast energy production without needing oxygen. Good for surges.</p>
+                            <p class="text-red-400 font-bold text-xs mb-1">CONS (OBLA)</p>
+                            <p class="text-slate-400 text-xs">Lactic acid drops blood pH, inhibiting the PFK enzyme. Causes severe muscle fatigue.</p>
+                        </div>
+                    </div>
+
+                    <!-- Aerobic -->
+                    <div class="bg-slate-900 border border-emerald-500/30 p-6 rounded-xl hover:border-emerald-500 transition-colors group">
+                        <div class="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-emerald-500/20">
+                            <i data-lucide="wind" class="text-emerald-500"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-emerald-400 mb-1">Aerobic System</h3>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Mitochondrial</p>
+                        
+                        <div class="space-y-3 text-sm">
+                            <p><strong class="text-slate-300">Fuel:</strong> Glycogen & Fats</p>
+                            <p><strong class="text-slate-300">Duration:</strong> 3 minutes - Hours</p>
+                            <p><strong class="text-slate-300">Yield:</strong> 38 ATP per Glucose</p>
+                            <p><strong class="text-slate-300">By-product:</strong> CO2 & Water</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800">
+                            <p class="text-emerald-400 font-bold text-xs mb-1">PROS</p>
+                            <p class="text-slate-400 text-xs mb-3">Massive ATP yield. Clears lactic acid. Harmless by-products.</p>
+                            <p class="text-red-400 font-bold text-xs mb-1">CONS</p>
+                            <p class="text-slate-400 text-xs">Slow to activate. Requires constant oxygen delivery. Lower peak power.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-
         </div>
+
     </div>
 
-    <!-- Finish Overlay -->
-    <div id="finish-screen" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center">
-            <i data-lucide="flag" class="w-16 h-16 text-emerald-400 mx-auto mb-4"></i>
-            <h2 class="text-4xl font-black text-white mb-2">Race Finished</h2>
-            <p class="text-slate-400 font-bold uppercase tracking-widest text-sm mb-6"><span id="finish-athlete"></span> - <span id="finish-event"></span></p>
+    <!-- ========================================== -->
+    <!-- POST-RACE ANALYSIS MODAL                   -->
+    <!-- ========================================== -->
+    <div id="finish-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[90vh]">
             
-            <div class="bg-slate-950 p-6 rounded-xl border border-slate-800 mb-6">
-                <p class="text-slate-500 uppercase font-bold text-xs mb-1">Final Time</p>
-                <p id="finish-time" class="text-6xl font-black text-emerald-400 font-mono"></p>
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/50 rounded-t-2xl">
+                <div>
+                    <h2 class="text-2xl font-black text-white flex items-center gap-2">
+                        <i data-lucide="flag" class="text-emerald-400"></i> Race Debrief
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-1"><span id="modal-athlete" class="font-bold text-blue-400"></span> • <span id="modal-event" class="font-bold text-slate-300"></span> • <span id="modal-effort" class="font-bold text-yellow-400"></span> Effort</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Final Time</p>
+                    <p id="modal-time" class="text-5xl font-mono font-black text-emerald-400"></p>
+                </div>
             </div>
 
-            <p id="finish-analysis" class="text-slate-300 text-sm leading-relaxed mb-8 bg-blue-900/20 p-4 rounded-lg border border-blue-900/50"></p>
+            <div class="p-6 flex-1 overflow-y-auto custom-scroll space-y-6">
+                
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                        <i data-lucide="activity" class="w-4 h-4"></i> Coach's Analysis
+                    </h3>
+                    <p id="modal-analysis" class="text-slate-300 leading-relaxed"></p>
+                </div>
 
-            <button onclick="resetRace()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
-                <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Reset Simulator
-            </button>
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4"></i> Physiological Timeline
+                    </h3>
+                    <div id="modal-timeline" class="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-slate-800">
+                        <!-- Timeline entries injected here -->
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-6 border-t border-slate-800 bg-slate-950 rounded-b-2xl">
+                <button onclick="closeModal()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Configure Next Race
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
 
-        // --- DATA DICTIONARIES ---
+        // --- TAB LOGIC ---
+        function switchTab(tabId) {
+            document.getElementById('tab-simulator').classList.add('hidden');
+            document.getElementById('tab-knowledge').classList.add('hidden');
+            document.getElementById('btn-tab-simulator').className = 'tab-inactive inline-flex items-center px-1 pt-1 text-sm font-bold uppercase tracking-wider transition-colors';
+            document.getElementById('btn-tab-knowledge').className = 'tab-inactive inline-flex items-center px-1 pt-1 text-sm font-bold uppercase tracking-wider transition-colors';
+            
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`btn-tab-${tabId}`).className = 'tab-active inline-flex items-center px-1 pt-1 text-sm font-bold uppercase tracking-wider transition-colors';
+        }
+
+        // --- PHYSIOLOGY DATA & CONSTANTS ---
+        // Tuned to produce realistic results when Math is applied.
+        // OBLA is the threshold percentage of Lactate where speed drops drastically.
         const ATHLETES = {
-            UNTRAINED: { name: 'Untrained Individual', maxSpeed: 7.5, pcrCap: 80, obla: 50, aerobicClear: 1.0, desc: 'Average Joe. Low PCr, hits OBLA quickly, poor aerobic clearance.' },
-            BOLT: { name: 'Usain Bolt', maxSpeed: 12.4, pcrCap: 120, obla: 70, aerobicClear: 1.5, desc: 'Huge ATP-PC capacity for explosive speed. Low aerobic base.' },
-            RUDISHA: { name: 'David Rudisha', maxSpeed: 10.0, pcrCap: 90, obla: 95, aerobicClear: 4.0, desc: 'Unmatched Lactic Acid tolerance. Can buffer acidity efficiently.' },
-            FARAH: { name: 'Mo Farah', maxSpeed: 8.5, pcrCap: 70, obla: 80, aerobicClear: 8.0, desc: 'Massive aerobic engine. Clears lactate as fast as it builds at sub-max speeds.' }
+            BOLT: { id: 'BOLT', name: 'Usain Bolt', maxSpeed: 12.4, pcrCap: 120, obla: 50, aerobic: 1.5, type: 'Sprinter' },
+            RUDISHA: { id: 'RUDISHA', name: 'David Rudisha', maxSpeed: 10.8, pcrCap: 85, obla: 85, aerobic: 4.5, type: 'Middle Distance' },
+            FARAH: { id: 'FARAH', name: 'Mo Farah', maxSpeed: 9.5, pcrCap: 60, obla: 75, aerobic: 9.0, type: 'Endurance' }
         };
 
         const EVENTS = {
@@ -245,309 +363,373 @@
             RUN_1500: { id: 'RUN_1500', name: '1500m Endurance', dist: 1500 }
         };
 
+        // --- LEADERBOARD LOGIC ---
+        let leaderboards = {
+            'SPRINT_100': [],
+            'SPRINT_400': [],
+            'RUN_1500': []
+        };
+
+        function addLeaderboardEntry(eventObj, athleteObj, effort, timeStr, rawTime) {
+            leaderboards[eventObj.id].push({
+                athlete: athleteObj.name,
+                effort: effort,
+                timeStr: timeStr,
+                rawTime: rawTime
+            });
+            // Sort ascending (lower time is better)
+            leaderboards[eventObj.id].sort((a, b) => a.rawTime - b.rawTime);
+            // Keep top 10
+            leaderboards[eventObj.id] = leaderboards[eventObj.id].slice(0, 10);
+            updateLeaderboardUI();
+        }
+
+        function updateLeaderboardUI() {
+            const list = document.getElementById('leaderboard-list');
+            const eventId = DOM.evtSelect.value;
+            DOM.lbEvent.innerText = EVENTS[eventId].name;
+            
+            const entries = leaderboards[eventId];
+            if(entries.length === 0) {
+                list.innerHTML = `<div class="text-center text-slate-600 text-sm italic mt-10">Run a simulation to post a time.</div>`;
+                return;
+            }
+
+            let html = '';
+            entries.forEach((entry, index) => {
+                const medalColor = index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-orange-400' : 'text-slate-600';
+                html += `
+                    <div class="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-800 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="font-black w-4 text-center ${medalColor}">${index + 1}</span>
+                            <span class="font-bold text-slate-300">${entry.athlete}</span>
+                            <span class="text-[10px] bg-slate-800 text-slate-400 px-1 rounded">${entry.effort}%</span>
+                        </div>
+                        <span class="font-mono font-bold text-emerald-400">${entry.timeStr}s</span>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
         // --- SIMULATOR STATE ---
         let state = {
-            athlete: ATHLETES.RUDISHA,
-            event: EVENTS.SPRINT_400,
-            targetEffort: 0.0, // 0 to 1.0
-            actualSpeed: 0,
-            
             isRunning: false,
-            isFinished: false,
-            time: 0, // In tenths
+            time: 0, // 0.1s increments
             distance: 0,
+            speed: 0,
             
-            // Physiology
-            pcr: 100, // percentage of athlete's capacity
+            pcr: 100, // percentage
             lactate: 0, // 0 to 100
             
-            // Exam Event Flags (to prevent spamming logs)
-            flags: { start: false, pcrDrop: false, pcrEmpty: false, lactateRise: false, obla: false, wall: false }
+            timeline: [] // {time: "9.5s", title: "", desc: "", color: ""}
         };
 
         let interval = null;
 
-        // --- DOM ELEMENTS ---
+        // --- DOM REFERENCES ---
         const DOM = {
             athSelect: document.getElementById('athlete-selector'),
             evtSelect: document.getElementById('event-selector'),
-            evtName: document.getElementById('event-name'),
+            effSlider: document.getElementById('effort-slider'),
+            effDisplay: document.getElementById('effort-display'),
+            startBtn: document.getElementById('start-btn'),
+            
+            dispEvt: document.getElementById('display-event-name'),
+            dispAth: document.getElementById('display-athlete-name'),
             time: document.getElementById('time-display'),
-            dist: document.getElementById('distance-display'),
-            totalDist: document.getElementById('total-distance'),
+            dist: document.getElementById('dist-display'),
             speed: document.getElementById('speed-display'),
+            lbEvent: document.getElementById('lb-event'),
             
             runWrap: document.getElementById('runner-wrapper'),
             runFlip: document.getElementById('runner-flip'),
             runIcon: document.getElementById('runner-icon'),
-            centerEffort: document.getElementById('center-effort'),
-            
-            playBtn: document.getElementById('play-btn'),
-            playIcon: document.getElementById('play-icon'),
-            playText: document.getElementById('play-text'),
             
             pcrBar: document.getElementById('pcr-bar'), pcrText: document.getElementById('pcr-text'),
-            lacBar: document.getElementById('lactate-bar'), lacText: document.getElementById('lactate-text'), lacTitle: document.getElementById('lactate-title'),
+            lacBar: document.getElementById('lactate-bar'), lacText: document.getElementById('lactate-text'),
             oblaMarker: document.getElementById('obla-marker'),
-            aerobicText: document.getElementById('aerobic-text'), aerobicDesc: document.getElementById('aerobic-desc'),
             
-            logBox: document.getElementById('log-container'),
-            finScreen: document.getElementById('finish-screen'),
-            finAth: document.getElementById('finish-athlete'), finEvt: document.getElementById('finish-event'),
-            finTime: document.getElementById('finish-time'), finAnalysis: document.getElementById('finish-analysis')
+            warnBox: document.getElementById('warning-box'), warnIcon: document.getElementById('warning-icon'),
+            warnTitle: document.getElementById('warning-title'), warnDesc: document.getElementById('warning-desc'),
+            
+            modal: document.getElementById('finish-modal'),
+            modAth: document.getElementById('modal-athlete'), modEvt: document.getElementById('modal-event'),
+            modEff: document.getElementById('modal-effort'), modTime: document.getElementById('modal-time'),
+            modAnal: document.getElementById('modal-analysis'), modTimeLine: document.getElementById('modal-timeline')
         };
 
-        // --- INITIALIZATION ---
-        DOM.athSelect.addEventListener('change', (e) => { state.athlete = ATHLETES[e.target.value]; resetRace(); });
-        DOM.evtSelect.addEventListener('change', (e) => { state.event = EVENTS[e.target.value]; resetRace(); });
+        // --- EVENT LISTENERS ---
+        DOM.athSelect.addEventListener('change', () => { DOM.dispAth.innerText = ATHLETES[DOM.athSelect.value].name; });
+        DOM.evtSelect.addEventListener('change', () => { 
+            DOM.dispEvt.innerText = EVENTS[DOM.evtSelect.value].name; 
+            updateLeaderboardUI();
+        });
+        DOM.effSlider.addEventListener('input', (e) => { DOM.effDisplay.innerText = `${e.target.value}%`; });
 
-        function setEffort(val) {
-            state.targetEffort = val;
+        // --- CORE LOGIC ---
+        function startRace() {
+            if(state.isRunning) return;
             
-            // Update button UI
-            document.querySelectorAll('.effort-btn').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-white', 'bg-slate-700');
-            });
-            document.getElementById(`btn-${val*100}`).classList.add('ring-2', 'ring-white', 'bg-slate-700');
-            
-            DOM.centerEffort.innerText = `${val*100}%`;
-            
-            if(!state.isRunning && !state.isFinished) toggleRun();
-        }
-
-        function toggleRun() {
-            if(state.isFinished) return;
-            state.isRunning = !state.isRunning;
-            
-            if(state.isRunning) {
-                if(state.targetEffort === 0) setEffort(1.0); // Default start
-                DOM.playBtn.classList.replace('bg-emerald-600', 'bg-slate-700');
-                DOM.playBtn.classList.replace('hover:bg-emerald-500', 'hover:bg-slate-600');
-                DOM.playIcon.setAttribute('data-lucide', 'pause'); DOM.playText.innerText = 'Pause';
-                
-                if(!state.flags.start) {
-                    addLog('Race Started', `The brain recruits motor units. Athlete targeting ${state.targetEffort*100}% effort.`, 'blue');
-                    state.flags.start = true;
-                }
-                
-                interval = setInterval(gameLoop, 100);
-            } else {
-                DOM.playBtn.classList.replace('bg-slate-700', 'bg-emerald-600');
-                DOM.playBtn.classList.replace('hover:bg-slate-600', 'hover:bg-emerald-500');
-                DOM.playIcon.setAttribute('data-lucide', 'play'); DOM.playText.innerText = 'Resume';
-                clearInterval(interval);
-            }
-            lucide.createIcons();
-        }
-
-        function resetRace() {
-            clearInterval(interval);
-            state.isRunning = false; state.isFinished = false;
-            state.time = 0; state.distance = 0; state.actualSpeed = 0; state.targetEffort = 0;
-            state.pcr = 100; state.lactate = 0;
-            state.flags = { start: false, pcrDrop: false, pcrEmpty: false, lactateRise: false, obla: false, wall: false };
-            
-            DOM.logBox.innerHTML = '';
-            DOM.finScreen.classList.add('hidden');
-            
-            DOM.playBtn.classList.replace('bg-slate-700', 'bg-emerald-600');
-            DOM.playBtn.classList.replace('hover:bg-slate-600', 'hover:bg-emerald-500');
-            DOM.playIcon.setAttribute('data-lucide', 'play'); DOM.playText.innerText = 'Start Race';
-            
-            document.querySelectorAll('.effort-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-white', 'bg-slate-700'));
-            DOM.centerEffort.innerText = `0%`;
-            
-            lucide.createIcons();
-            updateUI();
-        }
-
-        function addLog(title, text, color) {
-            const colors = {
-                blue: 'border-blue-500 bg-blue-900/20 text-blue-300',
-                orange: 'border-orange-500 bg-orange-900/20 text-orange-300',
-                red: 'border-red-500 bg-red-900/20 text-red-300',
-                emerald: 'border-emerald-500 bg-emerald-900/20 text-emerald-300',
-                yellow: 'border-yellow-500 bg-yellow-900/20 text-yellow-300'
+            // Reset State
+            state = {
+                isRunning: true, time: 0, distance: 0, speed: 0, pcr: 100, lactate: 0,
+                timeline: [], flags: { pcrEmpty: false, obla: false, wall: false }
             };
+
+            // Lock UI
+            DOM.athSelect.disabled = true; DOM.evtSelect.disabled = true; DOM.effSlider.disabled = true;
+            DOM.startBtn.classList.replace('bg-emerald-600', 'bg-slate-700');
+            DOM.startBtn.innerHTML = `<i data-lucide="loader" class="animate-spin"></i> Racing...`;
+            lucide.createIcons();
             
-            const s = Math.floor(state.time / 10);
-            const html = `
-                <div class="log-enter border-l-4 p-3 rounded-r-lg ${colors[color]} text-sm">
-                    <div class="flex justify-between items-center mb-1">
-                        <strong class="font-black tracking-wider uppercase text-xs">${title}</strong>
-                        <span class="font-mono text-xs bg-slate-900 px-1 rounded opacity-70">@${s}s</span>
-                    </div>
-                    <p class="leading-relaxed opacity-90">${text}</p>
-                </div>
-            `;
-            DOM.logBox.insertAdjacentHTML('afterbegin', html);
+            const ath = ATHLETES[DOM.athSelect.value];
+            DOM.oblaMarker.style.left = `${ath.obla}%`;
+            
+            // Log Start
+            logTimeline("Race Started", `Athlete pushes off at ${DOM.effSlider.value}% target effort.`, "blue");
+
+            interval = setInterval(gameLoop, 100);
         }
 
-        // --- CORE PHYSIOLOGY ENGINE ---
         function gameLoop() {
             state.time += 1;
             
-            const targetSpeed = state.athlete.maxSpeed * state.targetEffort;
+            const ath = ATHLETES[DOM.athSelect.value];
+            const evt = EVENTS[DOM.evtSelect.value];
+            const effortRatio = parseInt(DOM.effSlider.value) / 100;
+            const targetSpeed = ath.maxSpeed * effortRatio;
+            
             let currentSpeed = targetSpeed;
             
-            // 1. Calculate Energy Demand based on speed intent
-            // High speed = massive ATP demand per tick
-            const atpDemand = Math.pow(targetSpeed, 1.5) * 0.15; 
-            
-            let pcrProvided = 0;
-            let glycolyticProvided = 0;
-            let aerobicProvided = state.athlete.aerobicClear; // Constant base supply
+            // --- METABOLIC ENGINE MATH ---
+            // Energy demand scales exponentially with speed.
+            // Tuning factor: A world record 400m speed (approx 9.3 m/s avg) should demand massive energy.
+            const demand = Math.pow(targetSpeed, 2) * 0.085; 
+            const aerobicSupply = ath.aerobic;
 
-            // 2. Supply ATP: First check PCr System (Alactic)
-            if (state.pcr > 0 && atpDemand > aerobicProvided) {
-                // Drain PCr. Athletes with higher capacity drain slower relative to their total %.
-                const drainRate = (atpDemand * 2) / state.athlete.pcrCap; 
-                state.pcr = Math.max(0, state.pcr - drainRate);
-                pcrProvided = atpDemand;
+            if (demand <= aerobicSupply) {
+                // Fully aerobic state. Clear lactate if any.
+                state.lactate = Math.max(0, state.lactate - ((aerobicSupply - demand) * 0.5));
+            } else {
+                // Shortfall must be met by Anaerobic systems
+                let deficit = demand - aerobicSupply;
                 
-                // Logging logic
-                if(state.pcr < 50 && !state.flags.pcrDrop) {
-                    addLog('ATP-PC Depleting', 'PCr stores are breaking down rapidly to resynthesize ATP for explosive movement.', 'orange');
-                    state.flags.pcrDrop = true;
-                }
-            } 
-            
-            // 3. Supply ATP: Once PCr is low, Anaerobic Glycolysis kicks in
-            if (state.pcr <= 0) {
-                if(!state.flags.pcrEmpty) {
-                    addLog('System Shift', 'PCr fully depleted. Anaerobic Glycolysis is now the dominant energy system.', 'yellow');
-                    state.flags.pcrEmpty = true;
-                }
-                
-                const deficit = atpDemand - aerobicProvided;
-                if(deficit > 0) {
-                    // Creating Lactic Acid
-                    const lactateSpike = (deficit * 1.5); 
-                    state.lactate = Math.min(100, state.lactate + lactateSpike);
-                    
-                    if(state.lactate > 20 && !state.flags.lactateRise) {
-                        addLog('By-Product Accumulation', 'Glycogen is being broken down without O₂. Lactic acid is accumulating in the muscles.', 'red');
-                        state.flags.lactateRise = true;
+                // 1. Try ATP-PC first
+                if (state.pcr > 0) {
+                    // Drain PCr. Larger capacity drains slower percentage-wise.
+                    const drain = (deficit / ath.pcrCap) * 100; 
+                    state.pcr = Math.max(0, state.pcr - drain);
+                } 
+                // 2. Anaerobic Glycolysis kicks in
+                else {
+                    if(!state.flags.pcrEmpty) {
+                        logTimeline("System Shift: Glycolysis", "PCr stores completely depleted. Anaerobic Glycolysis is now the dominant energy system producing ATP without O2.", "yellow");
+                        state.flags.pcrEmpty = true;
                     }
+                    
+                    // Add to lactate pool. 
+                    state.lactate = Math.min(100, state.lactate + (deficit * 0.45));
                 }
             }
 
-            // 4. Aerobic Clearance (Recovery/Cruising)
-            if (atpDemand < aerobicProvided) {
-                // Clearing lactate
-                state.lactate = Math.max(0, state.lactate - (state.athlete.aerobicClear * 0.1));
-            }
-
-            // 5. The OBLA Penalty (Fatigue)
-            if (state.lactate > state.athlete.obla) {
+            // --- FATIGUE CALCULATION (OBLA) ---
+            if (state.lactate > ath.obla) {
                 if(!state.flags.obla) {
-                    addLog('OBLA Reached!', `Onset of Blood Lactate Accumulation. Acidity inhibits PFK enzyme. Muscle contraction forcefully impaired.`, 'red');
+                    logTimeline("OBLA Reached (Fatigue)", `Lactic acid accumulation has dropped blood pH. PFK enzyme is inhibited. Athlete experiencing severe muscle fatigue.`, "orange");
                     state.flags.obla = true;
                 }
                 
-                // Severe speed penalty based on how far past OBLA they are
-                const overThreshold = state.lactate - state.athlete.obla;
-                const penaltyMult = Math.max(0.3, 1 - (overThreshold * 0.02)); 
-                currentSpeed = targetSpeed * penaltyMult;
+                // Multiplier drops exponentially as lactate goes over OBLA threshold.
+                const excessLactate = state.lactate - ath.obla;
+                // Severe penalty: speed can drop to 20% of target.
+                const fatigueMultiplier = Math.max(0.2, 1 - (excessLactate * 0.035));
+                currentSpeed = targetSpeed * fatigueMultiplier;
                 
-                if (currentSpeed < (state.athlete.maxSpeed * 0.4) && !state.flags.wall) {
-                     addLog('Hitting the Wall', 'Severe Acidosis. The athlete is physically unable to maintain pace despite brain signaling max effort.', 'red');
-                     state.flags.wall = true;
+                if (currentSpeed < (ath.maxSpeed * 0.4) && !state.flags.wall) {
+                    logTimeline("Hitting the Wall", `Acidosis is critical. Athlete can no longer maintain form and speed dramatically plummets.`, "red");
+                    state.flags.wall = true;
                 }
             }
 
-            // Apply speed to distance
-            state.actualSpeed = currentSpeed;
-            state.distance += (currentSpeed * 0.1);
-
-            // Finish check
-            if (state.distance >= state.event.dist) {
-                state.distance = state.event.dist;
-                state.isFinished = true;
-                clearInterval(interval);
-                showFinish();
-            }
+            state.speed = currentSpeed;
+            state.distance += (currentSpeed * 0.1); // 0.1s tick
 
             updateUI();
+
+            // Finish check
+            if (state.distance >= evt.dist) {
+                state.distance = evt.dist;
+                finishRace();
+            }
         }
 
-        // --- UI UPDATES ---
         function updateUI() {
-            // Text
-            DOM.evtName.innerText = state.event.name;
-            DOM.totalDist.innerText = state.event.dist;
-            DOM.dist.innerText = state.distance.toFixed(1);
-            DOM.speed.innerText = state.actualSpeed.toFixed(1);
-            
+            const ath = ATHLETES[DOM.athSelect.value];
+            const evt = EVENTS[DOM.evtSelect.value];
+
+            // Timers & Text
             const s = Math.floor(state.time / 10);
             const ms = state.time % 10;
             DOM.time.innerText = `${s}.${ms}`;
+            DOM.dist.innerText = state.distance.toFixed(0);
+            DOM.speed.innerText = state.speed.toFixed(1);
 
-            // Track Math
-            const progress = state.distance / state.event.dist;
+            // Circular Track (1 full lap = event distance)
+            const progress = state.distance / evt.dist;
             const angleDeg = (progress * 360) - 90;
             const angleRad = angleDeg * (Math.PI / 180);
-            const radius = 110; 
+            const radius = 100; // inner radius
             const x = Math.cos(angleRad) * radius;
             const y = Math.sin(angleRad) * radius;
             
             DOM.runWrap.style.transform = `translate(${x}px, ${y}px)`;
             DOM.runFlip.style.transform = Math.sin(angleRad) < 0 ? `scaleX(-1)` : `scaleX(1)`;
-            
-            if(state.isRunning && state.actualSpeed > 0) {
-                DOM.runIcon.classList.add('-translate-y-1.5');
-                setTimeout(() => DOM.runIcon.classList.remove('-translate-y-1.5'), 50);
+            if(state.isRunning && state.speed > 0) {
+                DOM.runIcon.classList.add('-translate-y-1');
+                setTimeout(() => DOM.runIcon.classList.remove('-translate-y-1'), 50);
             }
 
             // Bars
             DOM.pcrBar.style.width = `${state.pcr}%`;
             DOM.pcrText.innerText = `${state.pcr.toFixed(0)}%`;
-            
             DOM.lacBar.style.width = `${state.lactate}%`;
             DOM.lacText.innerText = `${state.lactate.toFixed(0)}%`;
-            DOM.oblaMarker.style.left = `${state.athlete.obla}%`;
-            
-            if(state.lactate > state.athlete.obla) {
-                DOM.lacText.classList.replace('text-slate-300', 'text-red-400');
-                DOM.lacTitle.classList.replace('text-slate-300', 'text-red-500');
-                DOM.lacTitle.classList.add('animate-pulse');
-            } else {
-                DOM.lacText.classList.replace('text-red-400', 'text-slate-300');
-                DOM.lacTitle.classList.replace('text-red-500', 'text-slate-300');
-                DOM.lacTitle.classList.remove('animate-pulse');
-            }
 
-            // Static Athlete Info
-            DOM.aerobicText.innerText = `Clearance: ${state.athlete.aerobicClear}x`;
-            DOM.aerobicDesc.innerText = state.athlete.desc;
+            // Warnings Update
+            if(state.lactate > ath.obla) {
+                DOM.warnBox.className = 'bg-red-950/50 border border-red-800 p-4 rounded-xl transition-all';
+                DOM.warnIcon.className = 'text-red-500 mt-0.5 animate-pulse';
+                DOM.warnIcon.setAttribute('data-lucide', 'alert-octagon');
+                DOM.warnTitle.className = 'font-bold text-red-400 text-sm';
+                DOM.warnTitle.innerText = 'Critical Acidosis (OBLA)';
+                DOM.warnDesc.className = 'text-xs text-red-300 mt-1';
+                DOM.warnDesc.innerText = 'Lactic acid is inhibiting enzymes. Speed severely reduced.';
+            } else if (state.lactate > (ath.obla * 0.7)) {
+                DOM.warnBox.className = 'bg-yellow-950/50 border border-yellow-800 p-4 rounded-xl transition-all';
+                DOM.warnIcon.className = 'text-yellow-500 mt-0.5';
+                DOM.warnIcon.setAttribute('data-lucide', 'alert-triangle');
+                DOM.warnTitle.className = 'font-bold text-yellow-400 text-sm';
+                DOM.warnTitle.innerText = 'Lactate Accumulating';
+                DOM.warnDesc.className = 'text-xs text-yellow-300 mt-1';
+                DOM.warnDesc.innerText = 'Approaching OBLA. Anaerobic Glycolysis active.';
+            } else if (state.pcr < 20) {
+                 DOM.warnBox.className = 'bg-orange-950/50 border border-orange-800 p-4 rounded-xl transition-all';
+                 DOM.warnIcon.className = 'text-orange-500 mt-0.5';
+                 DOM.warnIcon.setAttribute('data-lucide', 'battery-low');
+                 DOM.warnTitle.className = 'font-bold text-orange-400 text-sm';
+                 DOM.warnTitle.innerText = 'PCr Depleting';
+                 DOM.warnDesc.className = 'text-xs text-orange-300 mt-1';
+                 DOM.warnDesc.innerText = 'Alactic system exhausted. Shifting systems.';
+            } else {
+                DOM.warnBox.className = 'bg-slate-950 border border-slate-800 p-4 rounded-xl opacity-50 transition-all';
+                DOM.warnIcon.className = 'text-emerald-500 mt-0.5';
+                DOM.warnIcon.setAttribute('data-lucide', 'check-circle');
+                DOM.warnTitle.className = 'font-bold text-slate-500 text-sm';
+                DOM.warnTitle.innerText = 'Engine Optimal';
+                DOM.warnDesc.className = 'text-xs text-slate-600 mt-1';
+                DOM.warnDesc.innerText = 'Energy systems managing demand.';
+            }
+            lucide.createIcons();
         }
 
-        function showFinish() {
-            DOM.finScreen.classList.remove('hidden');
+        function logTimeline(title, desc, color) {
             const s = Math.floor(state.time / 10);
             const ms = state.time % 10;
-            
-            DOM.finAth.innerText = state.athlete.name;
-            DOM.finEvt.innerText = state.event.name;
-            DOM.finTime.innerText = `${s}.${ms}s`;
-
-            let analysis = "";
-            if(state.event.id === 'SPRINT_100') {
-                if(state.lactate > 40) analysis = "You relied too much on Anaerobic Glycolysis. An elite 100m sprint should be almost entirely powered by the ATP-PC system.";
-                else analysis = "Excellent. The ATP-PC system provided the explosive energy required without severe lactic acid buildup.";
-            } else if (state.event.id === 'SPRINT_400') {
-                if(state.flags.wall) analysis = "Poor pacing strategy. By pushing 100% effort early, OBLA was reached too soon. PFK inhibition caused a massive drop in speed at the end of the race.";
-                else analysis = "Good pacing. You managed the Anaerobic Glycolysis system well, riding just below OBLA to maintain a high average speed without hitting the wall.";
-            } else {
-                if(state.flags.wall) analysis = "You sprinted an endurance event. Lactic acid accumulated faster than your Aerobic system could clear it.";
-                else analysis = "Perfect aerobic pacing. You allowed the mitochondria to process O2 and clear lactic acid, maintaining a steady state.";
-            }
-            
-            DOM.finAnalysis.innerText = analysis;
+            state.timeline.push({ time: `${s}.${ms}s`, title, desc, color });
         }
 
-        // Init UI
-        updateUI();
+        function finishRace() {
+            clearInterval(interval);
+            state.isRunning = false;
+            
+            // Unlock UI
+            DOM.athSelect.disabled = false; DOM.evtSelect.disabled = false; DOM.effSlider.disabled = false;
+            DOM.startBtn.classList.replace('bg-slate-700', 'bg-emerald-600');
+            DOM.startBtn.innerHTML = `<i data-lucide="flag"></i> Start Simulation`;
+            lucide.createIcons();
+
+            const ath = ATHLETES[DOM.athSelect.value];
+            const evt = EVENTS[DOM.evtSelect.value];
+            const effort = DOM.effSlider.value;
+            
+            const s = Math.floor(state.time / 10);
+            const ms = state.time % 10;
+            const timeStr = `${s}.${ms}`;
+            
+            logTimeline("Race Finish", `Crossed the line in ${timeStr} seconds.`, "emerald");
+
+            // Add to Leaderboard
+            addLeaderboardEntry(evt, ath, effort, timeStr, state.time);
+
+            // Show Modal
+            DOM.modAth.innerText = ath.name;
+            DOM.modEvt.innerText = evt.name;
+            DOM.modEff.innerText = `${effort}%`;
+            DOM.modTime.innerText = `${timeStr}s`;
+
+            // Dynamic Analysis Text
+            let analysis = "";
+            if(evt.id === 'SPRINT_100') {
+                if(state.flags.obla) analysis = "Poor pacing. You hit OBLA in a 100m sprint. An elite 100m relies almost entirely on the ATP-PC system. A faster, more explosive athlete/effort is required.";
+                else analysis = "Excellent execution. The ATP-PC system provided the explosive energy required without severe lactic acid buildup, mirroring an elite 100m performance.";
+            } else if (evt.id === 'SPRINT_400') {
+                if(state.flags.wall) analysis = "Too aggressive. Pushing too hard early on caused you to hit OBLA prematurely. The resulting PFK enzyme inhibition caused a massive drop in speed (hitting the wall). A slightly lower pace is required for 400m optimization.";
+                else if(state.pcr > 0) analysis = "Too conservative. You left energy on the table. A 400m sprint should fully exhaust the ATP-PC system and heavily tax the Anaerobic Glycolysis system right up to OBLA.";
+                else analysis = "Superb 400m pacing. You exhausted the ATP-PC system and managed the Anaerobic Glycolysis system perfectly, riding the edge of OBLA without hitting the wall.";
+            } else {
+                if(state.flags.wall) analysis = "You sprinted an endurance event. Lactic acid accumulated much faster than your Aerobic system could clear it, forcing you to a crawl.";
+                else analysis = "Excellent aerobic pacing. You allowed the mitochondria to process O2 and clear lactic acid, maintaining a steady state below the OBLA threshold.";
+            }
+            DOM.modAnal.innerText = analysis;
+
+            // Build Timeline HTML
+            let tlHtml = '';
+            const colorMap = {
+                'blue': 'bg-blue-500', 'orange': 'bg-orange-500', 
+                'yellow': 'bg-yellow-500', 'red': 'bg-red-500', 'emerald': 'bg-emerald-500'
+            };
+            
+            state.timeline.forEach(item => {
+                tlHtml += `
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-slate-900 ${colorMap[item.color]} shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-lg z-10"></div>
+                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-800/50 p-4 rounded-xl border border-slate-700 shadow">
+                        <div class="flex items-center justify-between space-x-2 mb-1">
+                            <div class="font-bold text-slate-200 text-sm">${item.title}</div>
+                            <time class="font-mono text-xs text-${item.color.replace('500', '400')} bg-slate-900 px-2 py-0.5 rounded">${item.time}</time>
+                        </div>
+                        <div class="text-slate-400 text-xs leading-relaxed">${item.desc}</div>
+                    </div>
+                </div>`;
+            });
+            DOM.modTimeLine.innerHTML = tlHtml;
+
+            DOM.modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            DOM.modal.classList.add('hidden');
+            // Reset visuals for next race
+            DOM.time.innerText = "0.0"; DOM.dist.innerText = "0"; DOM.speed.innerText = "0.0";
+            DOM.pcrBar.style.width = "100%"; DOM.lacBar.style.width = "0%";
+            DOM.pcrText.innerText = "100%"; DOM.lacText.innerText = "0%";
+            DOM.runWrap.style.transform = `translate(0px, -100px)`;
+            
+            DOM.warnBox.className = 'bg-slate-950 border border-slate-800 p-4 rounded-xl opacity-50 transition-all';
+            DOM.warnIcon.className = 'text-emerald-500 mt-0.5';
+            DOM.warnIcon.setAttribute('data-lucide', 'check-circle');
+            DOM.warnTitle.className = 'font-bold text-slate-500 text-sm';
+            DOM.warnTitle.innerText = 'Engine Optimal';
+            DOM.warnDesc.className = 'text-xs text-slate-600 mt-1';
+            DOM.warnDesc.innerText = 'Ready for next simulation.';
+            lucide.createIcons();
+        }
+
+        // Init
+        updateLeaderboardUI();
+        DOM.runWrap.style.transform = `translate(0px, -100px)`; // Starting pos (top of circle)
+
     </script>
 </body>
 </html>
